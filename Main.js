@@ -2,6 +2,7 @@ const express = require('express')
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
 
 const app = express()
 const port = 3000
@@ -26,7 +27,25 @@ async function ConnectToDatabase () {
 
 //verification functions
 
-function VerifyJWT (req, res, next) {
+async function CreateJWT(id,login,timeExpiresH) {
+    const credentials = {
+        login: login,
+        id: id
+    };
+    const token = jwt.sign(credentials, process.env.API_SECRET_KEY, { expiresIn: `${timeExpiresH}h` });
+    return token;
+}
+
+function VerifyJWT(token) {
+  try {
+    const decoded = jwt.verify(token, process.env.API_SECRET_KEY);
+    return { result: true, userDetails: decoded};
+  } catch (error) {
+    return { result: false, userDetails: error};
+  }
+};
+
+function VerifyJWTMiddleware (req, res, next) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -44,10 +63,48 @@ function VerifyJWT (req, res, next) {
   }
 };
 
+async function createHashPassword(password) {
+    const salt = await bcrypt.genSalt(10);
+    const hash = await bcrypt.hash(password, salt);
+    return hash;
+}
+  async function checkPasswordCorrect(plainTextPassword, hashedPassword) {
+    return await bcrypt.compare(plainTextPassword, hashedPassword);
+}
+
+//sending emails
+
+async function SendEmail(receiverEmail,generatedToken) {
+  var transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: 'kamil.rzezniczek@gmail.com',
+      pass: process.env.API_EMAIL_PASSWORD
+    }
+  });
+
+  var mailOptions = {
+    from: 'kamil.rzezniczek@gmail.com',
+    to: receiverEmail,
+    subject: 'Account activation Express js App',
+    text: `Please click on this link to activate your account: http:localhost:3000/registerconfirm?token=${generatedToken}`
+  };
+  
+  transporter.sendMail(mailOptions, function(error, info){
+    if (error) {
+      console.log(error);
+    } else {
+      console.log('Email sent: ' + info.response);
+    }
+  });
+}
+
+
 //models and schemas
 const userSchema = new mongoose.Schema({ 
     login: String, 
     password: String, 
+    email: String,
     token: String,
     name: String, 
     surname: String, 
@@ -58,9 +115,67 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model('User', userSchema,'Users');
 
 //endpoints
+app.post('/register', async(req,res) => {
+
+  const userToRegister = new User({ 
+    login: req.body.login,
+    password: req.body.password,
+    token: '',
+    email: req.body.email,
+    name: req.body.name,
+    surname: req.body.surname,
+    activated: false,
+    resetPassword: false
+  });
+
+  const newUser = await userToRegister.save()    
+  .then(async () => {
+    let activationToken = await CreateJWT(newUser._id,req.body.login,24);
+    await SendEmail(req.body.email,activationToken);
+    res.status(201).send('User registered sucessfully! Please activate your account by clicking on link in email sended to your account');
+  })
+  .catch(error => res.status(500).send("Error during register user in database, reason: " + error));
+})
+
+app.post('/registerconfirm', async(req,res) => {
+
+  var tokenVerification = await VerifyJWT(req.query.token);
+  if(tokenVerification.result) {
+    const filters = {};
+    if (tokenVerification.userDetails.id) {
+      filters._id = tokenVerification.userDetails.id;
+    }
+    if (tokenVerification.userDetails.login) {
+      filters.login = tokenVerification.userDetails.login;
+    }
+    var user = await MyModel.findOne(filters);
+    if(!user){
+      req.status(404).send("User dont exist");
+    }
+    user.activated = true;
+    await user.save();
+    req.status(200).send("Your account has been confirmed succesfully. Welcome.");
+  } 
+  else
+    req.status(404).send("Token is invalid");
+})
+
+app.post('/login', async(req,res) => {
+    let login = req.body.login;
+    let password = req.body.password;
+
+    
+})
 
 app.get('/getusers', VerifyJWT, async (req, res) => {
-    var filters = req.params.filters;
+  const filters = {};
+  if (req.query.name) {
+    filters.name = req.query.name; // Filter by name
+  }
+  if (req.query.age) {
+    filters.age = req.query.age; // Filter by age (can use comparison operators like $gt, $lt)
+  }
+  const documents = await MyModel.find(filters);
     var body = req.body;
     var queryParam = req.query;
 
@@ -75,7 +190,7 @@ app.get('/getusers', VerifyJWT, async (req, res) => {
     });
 
     await User.create(newUser)
-    .then(() => res.send('User added sucessfully!'))
+    .then(() => res.json('User added sucessfully!'))
     .catch(error => console.log("Error during save to database, reason: " + error));
 })
 
