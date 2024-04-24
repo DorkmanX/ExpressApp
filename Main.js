@@ -268,21 +268,28 @@ app.post('/login', async(req,res) => {
     });
 })
 
-app.get('/getbooks', VerifyJWTMiddleware, async (req, res) => {
-  const { title, author, genre, year } = req.query;
+app.get('/get/books', VerifyJWTMiddleware, async (req, res) => {
+  const { title, author, genre } = req.query;
 
   const query = {};
 
   if (title) query.title = { $regex: new RegExp(title, 'i') };
   if (author) query.author = author;
   if (genre) query.genre = genre;
-  if (year) query.year = year;
 
-  const books = await Book.find(filters);
-  res.json(books);
+  await Book.find(filters)
+  .then((books) => { 
+    console.log("Db error during insert"); 
+    res.json(books);
+  })
+  .catch(error => 
+  { 
+      console.log("Error during save to database, reason: " + error); 
+      res.status(500).send('User added sucessfully!');
+  });
 })
 
-app.post('/insertbook',VerifyJWTMiddleware,async (req,res) => {
+app.post('/insert/books',VerifyJWTMiddleware,async (req,res) => {
   const body = req.body;
 
   const newBook = new Book({ 
@@ -292,9 +299,44 @@ app.post('/insertbook',VerifyJWTMiddleware,async (req,res) => {
   });
 
   await User.create(newBook)
-  .then(() => { console.log("Db error during insert"); res.send('User added sucessfully!');})
-  .catch(error => { console.log("Error during save to database, reason: " + error); res.status(500).send('User added sucessfully!');});
+  .then(() => { 
+    console.log("Db error during insert"); 
+    res.status(201).send('User added sucessfully!');
+  })
+  .catch(error => { 
+    console.log("Error during save to database, reason: " + error); 
+    res.status(500).send('User added sucessfully!');
+  });
 })
+
+app.put('/update/books/:id',VerifyJWTMiddleware, async (req, res) => {
+    const { id } = req.params;
+    const updates = req.body;
+
+    await Book.findOneAndUpdate(id, updates, { new: true })
+    .then((book) => {
+      console.log("Updated book successfully");
+      res.json(book);
+    })
+    .catch(error => {
+      console.error(error);
+      return res.status(404).send('Book not found');
+    });
+});
+
+app.delete('delete/books/:id',VerifyJWTMiddleware, async (req, res) => {
+  const { id } = req.params;
+
+  await Book.findByIdAndDelete(id)
+  .then((book) => {
+    console.log("Deleted book successfully");
+    res.status(200).send("Deleted book successfully");
+  })
+  .catch(error => {
+    console.error(error);
+    return res.status(404).send('Book not found');
+  });
+});
 
 app.listen(port, async () => {
   console.log(`Express js app started at port: ${port}`);
