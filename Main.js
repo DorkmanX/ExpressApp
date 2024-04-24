@@ -3,24 +3,24 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
+const bodyParser = require('body-parser');
 
 const app = express()
 const port = 3000
+
+//global parsing of jsons
+app.use(bodyParser.json());
 
 //database related functions
 
 async function ConnectToDatabase () {
     try {
-        await mongoose.connect('mongodb://127.0.0.1:27017/expressdb', {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-            useCreateIndex: true
-        });
+        await mongoose.connect('mongodb://127.0.0.1:27017/expressdb');
         dotenv.config();
         console.log('MongoDB connection established successfully!');
     }
     catch(error) {
-        console.log("Failed connect to database with error: " + toString(error));
+        console.log("Failed connect to database with error: " + error);
         process.exit(1);
     }
 };
@@ -43,7 +43,7 @@ function VerifyJWT(token) {
   } catch (error) {
     return { result: false, userDetails: error};
   }
-};
+}
 
 function VerifyJWTMiddleware (req, res, next) {
   const authHeader = req.headers.authorization;
@@ -61,14 +61,15 @@ function VerifyJWTMiddleware (req, res, next) {
   } catch (error) {
     res.status(403).send('Forbidden');
   }
-};
+}
 
 async function createHashPassword(password) {
     const salt = await bcrypt.genSalt(10);
     const hash = await bcrypt.hash(password, salt);
     return hash;
 }
-  async function checkPasswordCorrect(plainTextPassword, hashedPassword) {
+
+async function checkPasswordCorrect(plainTextPassword, hashedPassword) {
     return await bcrypt.compare(plainTextPassword, hashedPassword);
 }
 
@@ -77,6 +78,9 @@ async function createHashPassword(password) {
 async function SendEmail(receiverEmail,generatedToken) {
   var transporter = nodemailer.createTransport({
     service: 'gmail',
+    secure: false,    
+    host: "smtp.gmail.com",
+    port: 587,
     auth: {
       user: 'kamil.rzezniczek@gmail.com',
       pass: process.env.API_EMAIL_PASSWORD
@@ -87,7 +91,7 @@ async function SendEmail(receiverEmail,generatedToken) {
     from: 'kamil.rzezniczek@gmail.com',
     to: receiverEmail,
     subject: 'Account activation Express js App',
-    text: `Please click on this link to activate your account: http:localhost:3000/registerconfirm?token=${generatedToken}`
+    html: `<span>Please click on this link to activate your account:</span> <a href="http://localhost:3000/registerconfirm?token=${generatedToken}">Click to activate</a>`
   };
   
   transporter.sendMail(mailOptions, function(error, info){
@@ -117,27 +121,29 @@ const User = mongoose.model('User', userSchema,'Users');
 //endpoints
 app.post('/register', async(req,res) => {
 
+  const data = req.body;
+
   const userToRegister = new User({ 
-    login: req.body.login,
-    password: req.body.password,
+    login: data.login,
+    password: data.password,
     token: '',
-    email: req.body.email,
-    name: req.body.name,
-    surname: req.body.surname,
+    email: data.email,
+    name: data.name,
+    surname: data.surname,
     activated: false,
     resetPassword: false
   });
 
-  const newUser = await userToRegister.save()    
-  .then(async () => {
-    let activationToken = await CreateJWT(newUser._id,req.body.login,24);
-    await SendEmail(req.body.email,activationToken);
+  await User.create(userToRegister)
+  .then(async (insertedUser) => {
+    let activationToken = await CreateJWT(insertedUser._id,insertedUser.login,24);
+    await SendEmail(insertedUser.email,activationToken);
     res.status(201).send('User registered sucessfully! Please activate your account by clicking on link in email sended to your account');
   })
   .catch(error => res.status(500).send("Error during register user in database, reason: " + error));
 })
 
-app.post('/registerconfirm', async(req,res) => {
+app.get('/registerconfirm', async(req,res) => {
 
   var tokenVerification = await VerifyJWT(req.query.token);
   if(tokenVerification.result) {
@@ -148,16 +154,22 @@ app.post('/registerconfirm', async(req,res) => {
     if (tokenVerification.userDetails.login) {
       filters.login = tokenVerification.userDetails.login;
     }
-    var user = await MyModel.findOne(filters);
-    if(!user){
-      req.status(404).send("User dont exist");
-    }
-    user.activated = true;
-    await user.save();
-    req.status(200).send("Your account has been confirmed succesfully. Welcome.");
+
+    User.updateOne(
+      filters,
+      { $set: { ["activated"]: true } }
+    )
+    .then(result => {
+      console.log(result);
+      res.status(200).send("Your account has been confirmed succesfully. Welcome.");
+    })
+    .catch(error => {
+      console.error(error);
+      res.status(500).send("DB error");
+    });
   } 
   else
-    req.status(404).send("Token is invalid");
+    res.status(404).send("Token is invalid");
 })
 
 app.post('/login', async(req,res) => {
@@ -167,7 +179,7 @@ app.post('/login', async(req,res) => {
     
 })
 
-app.get('/getusers', VerifyJWT, async (req, res) => {
+app.get('/getusers', VerifyJWTMiddleware, async (req, res) => {
   const filters = {};
   if (req.query.name) {
     filters.name = req.query.name; // Filter by name
