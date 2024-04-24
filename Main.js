@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const bodyParser = require('body-parser');
+const bcrypt = require('bcrypt');
 
 const app = express()
 const port = 3000
@@ -125,7 +126,7 @@ app.post('/register', async(req,res) => {
 
   const userToRegister = new User({ 
     login: data.login,
-    password: data.password,
+    password: await createHashPassword(data.password),
     token: '',
     email: data.email,
     name: data.name,
@@ -162,6 +163,74 @@ app.get('/registerconfirm', async(req,res) => {
     .then(result => {
       console.log(result);
       res.status(200).send("Your account has been confirmed succesfully. Welcome.");
+    })
+    .catch(error => {
+      console.error(error);
+      res.status(500).send("DB error");
+    });
+  } 
+  else
+    res.status(404).send("Token is invalid");
+})
+
+app.get('/resetpassword', async(req,res) => {
+  const email = req.query.email;
+  
+  await User.findOne( { "email" : email })  
+  .then(async (user) => {
+    console.log("User password reset enable");
+    await User.updateOne(
+      { "email" : email },
+      { $set: { ["resetPassword"]: true } }
+    ).then(async (result) => {
+      console.log(result);
+      res.status(200).send(await CreateJWT(user._id,user.login,1)); //send access token for front end to update password
+    })
+    .catch(error => {
+      console.error(error);
+      res.status(500).send("DB error");
+    });
+  })
+  .catch(error => {
+    console.error(error);
+    res.status(404).send("User with this email dont exist");
+  });
+})
+
+app.post('/resetconfirm', async(req,res) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).send('Unauthorized');
+  }
+
+  const token = authHeader.split(' ')[1];
+  var tokenVerification = await VerifyJWT(token);
+
+  if(tokenVerification.result) {
+    const filters = {};
+    if (tokenVerification.userDetails.id) {
+      filters._id = tokenVerification.userDetails.id;
+    }
+    if (tokenVerification.userDetails.login) {
+      filters.login = tokenVerification.userDetails.login;
+    }
+
+    const body = req.body;
+
+    if(body.newpass !== body.newpass2){
+      res.status(404).send("Passwords are different!");
+    }
+
+    const passwordHash = await createHashPassword(body.newpass);
+
+    await User.updateOne(
+      filters,
+      { $set: { ["resetPassword"]: false, ["password"] : passwordHash } }
+    )
+    .then(result => {
+      console.log(result);
+      res.status(200).send("Your password changed successfully.");
     })
     .catch(error => {
       console.error(error);
