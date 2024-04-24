@@ -117,7 +117,14 @@ const userSchema = new mongoose.Schema({
     resetPassword: Boolean
  });
 
+ const bookSchema = new mongoose.Schema({
+    title : String,
+    author: String,
+    genre: String
+ });
+
 const User = mongoose.model('User', userSchema,'Users');
+const Book = mongoose.model('Book',bookSchema,'Books');
 
 //endpoints
 app.post('/register', async(req,res) => {
@@ -242,37 +249,51 @@ app.post('/resetconfirm', async(req,res) => {
 })
 
 app.post('/login', async(req,res) => {
-    let login = req.body.login;
-    let password = req.body.password;
-
+    const body = req.body;
     
+    await User.findOne( { "login" : body.login })  
+    .then(async (user) => {
+      let passwordCorrect = await checkPasswordCorrect(body.password,user.password);
+      if(passwordCorrect) {
+        console.log(`User: ${user.login} logged successfully`);
+        let accessToken = await CreateJWT(user._id,user.login,1);
+        res.status(200).send(`Login and password correct, token: ${accessToken}`);
+      }
+      else
+        res.status(404).send("Login or password is incorrect");
+    })
+    .catch(error => {
+      console.error(error);
+      res.status(404).send("Login or password is incorrect");
+    });
 })
 
-app.get('/getusers', VerifyJWTMiddleware, async (req, res) => {
-  const filters = {};
-  if (req.query.name) {
-    filters.name = req.query.name; // Filter by name
-  }
-  if (req.query.age) {
-    filters.age = req.query.age; // Filter by age (can use comparison operators like $gt, $lt)
-  }
-  const documents = await MyModel.find(filters);
-    var body = req.body;
-    var queryParam = req.query;
+app.get('/getbooks', VerifyJWTMiddleware, async (req, res) => {
+  const { title, author, genre, year } = req.query;
 
-    const newUser = new User({ 
-        login: req.body.login,
-        password: req.body.password,
-        token: '',
-        name: req.body.name,
-        surname: req.body.surname,
-        activated: false,
-        resetPassword: false
-    });
+  const query = {};
 
-    await User.create(newUser)
-    .then(() => res.json('User added sucessfully!'))
-    .catch(error => console.log("Error during save to database, reason: " + error));
+  if (title) query.title = { $regex: new RegExp(title, 'i') };
+  if (author) query.author = author;
+  if (genre) query.genre = genre;
+  if (year) query.year = year;
+
+  const books = await Book.find(filters);
+  res.json(books);
+})
+
+app.post('/insertbook',VerifyJWTMiddleware,async (req,res) => {
+  const body = req.body;
+
+  const newBook = new Book({ 
+    title: body.title,
+    author: body.author,
+    genre: body.genre
+  });
+
+  await User.create(newBook)
+  .then(() => { console.log("Db error during insert"); res.send('User added sucessfully!');})
+  .catch(error => { console.log("Error during save to database, reason: " + error); res.status(500).send('User added sucessfully!');});
 })
 
 app.listen(port, async () => {
