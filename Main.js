@@ -251,7 +251,7 @@ app.post('/resetconfirm', async(req,res) => {
 app.post('/login', async(req,res) => {
     const body = req.body;
     
-    await User.findOne( { "login" : body.login })  
+    await User.findOne( { "login" : body.login,"activated": true })  
     .then(async (user) => {
       let passwordCorrect = await checkPasswordCorrect(body.password,user.password);
       if(passwordCorrect) {
