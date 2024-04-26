@@ -277,15 +277,15 @@ app.get('/get/books', VerifyJWTMiddleware, async (req, res) => {
   if (author) query.author = author;
   if (genre) query.genre = genre;
 
-  await Book.find(filters)
+  await Book.find(query)
   .then((books) => { 
-    console.log("Db error during insert"); 
+    console.log("Found books sucessfully"); 
     res.json(books);
   })
   .catch(error => 
   { 
       console.log("Error during save to database, reason: " + error); 
-      res.status(500).send('User added sucessfully!');
+      res.status(500).send('Internal error during book search!');
   });
 })
 
@@ -298,14 +298,14 @@ app.post('/insert/books',VerifyJWTMiddleware,async (req,res) => {
     genre: body.genre
   });
 
-  await User.create(newBook)
+  await Book.create(newBook)
   .then(() => { 
-    console.log("Db error during insert"); 
+    console.log("Book added successfully"); 
     res.status(201).send('User added sucessfully!');
   })
   .catch(error => { 
     console.log("Error during save to database, reason: " + error); 
-    res.status(500).send('User added sucessfully!');
+    res.status(500).send('Internal error during insert');
   });
 })
 
@@ -313,28 +313,28 @@ app.put('/update/books/:id',VerifyJWTMiddleware, async (req, res) => {
     const { id } = req.params;
     const updates = req.body;
 
-    await Book.findOneAndUpdate(id, updates, { new: true })
+    await Book.findOneAndUpdate({_id : id}, updates, { new: true })
     .then((book) => {
       console.log("Updated book successfully");
       res.json(book);
     })
     .catch(error => {
       console.error(error);
-      return res.status(404).send('Book not found');
+      return res.status(404).send('Internal error during update found');
     });
 });
 
-app.delete('delete/books/:id',VerifyJWTMiddleware, async (req, res) => {
+app.delete('/delete/books/:id',VerifyJWTMiddleware, async (req, res) => {
   const { id } = req.params;
 
   await Book.findByIdAndDelete(id)
   .then((book) => {
-    console.log("Deleted book successfully");
+    console.log(`Deleted book ${book.title} successfully`);
     res.status(200).send("Deleted book successfully");
   })
   .catch(error => {
     console.error(error);
-    return res.status(404).send('Book not found');
+    return res.status(404).send('Book to delete not found');
   });
 });
 
