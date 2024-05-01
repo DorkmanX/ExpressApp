@@ -5,9 +5,16 @@ const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt');
+const cors = require('cors');
 
 const app = express()
 const port = 3000
+
+//enable CORS and cookies
+app.use(cors({
+  origin: 'http://localhost:4200',
+  credentials: true
+}));
 
 //global parsing of jsons
 app.use(bodyParser.json());
@@ -268,7 +275,7 @@ app.post('/login', async(req,res) => {
     });
 })
 
-app.get('/get/books', VerifyJWTMiddleware, async (req, res) => {
+app.get('/get/books', /*VerifyJWTMiddleware,*/ async (req, res) => {
   const { title, author, genre } = req.query;
 
   const query = {};
@@ -279,8 +286,10 @@ app.get('/get/books', VerifyJWTMiddleware, async (req, res) => {
 
   await Book.find(query)
   .then((books) => { 
-    console.log("Found books sucessfully"); 
-    res.json(books);
+    filteredBooks = [];
+    console.log("Found books sucessfully");
+    books.forEach(book => filteredBooks.push({id: book._id,title: book.title,author: book.author,genre: book.genre })); 
+    res.json(filteredBooks);
   })
   .catch(error => 
   { 
