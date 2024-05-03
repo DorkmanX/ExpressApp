@@ -1,0 +1,27 @@
+[{
+  "_id": {
+    "$oid": "662bf9a298cb723aef1a4015"
+  },
+  "title": "W pustyni i w puszczy",
+  "author": "Henryk Sienkiewicz",
+  "genre": "Przygodowa",
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "662bfa2798cb723aef1a4017"
+  },
+  "title": "Dziady cz.3",
+  "author": "Adam Mickiewicz",
+  "genre": "Dramat",
+  "__v": 0
+},
+{
+  "_id": {
+    "$oid": "662bfa3298cb723aef1a401b"
+  },
+  "title": "Dziady cz.1",
+  "author": "Adam Mickiewicz",
+  "genre": "Dramat",
+  "__v": 0
+}]

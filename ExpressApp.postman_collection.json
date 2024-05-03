@@ -1,0 +1,316 @@
+{
+	"info": {
+		"_postman_id": "8e172843-3b16-4de5-b2c9-8b6ec79f4cb1",
+		"name": "ExpressApp",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "22786902"
+	},
+	"item": [
+		{
+			"name": "Register",
+			"request": {
+				"auth": {
+					"type": "jwt",
+					"jwt": [
+						{
+							"key": "algorithm",
+							"value": "HS256",
+							"type": "string"
+						},
+						{
+							"key": "isSecretBase64Encoded",
+							"value": false,
+							"type": "boolean"
+						},
+						{
+							"key": "payload",
+							"value": "{}",
+							"type": "string"
+						},
+						{
+							"key": "addTokenTo",
+							"value": "header",
+							"type": "string"
+						},
+						{
+							"key": "headerPrefix",
+							"value": "Bearer",
+							"type": "string"
+						},
+						{
+							"key": "queryParamKey",
+							"value": "token",
+							"type": "string"
+						},
+						{
+							"key": "header",
+							"value": "{}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"login\": \"rzeznik\",\r\n    \"password\": \"haslo2\",\r\n    \"email\": \"nonamekamil@gmail.com\",\r\n    \"name\": \"Kamil\",\r\n    \"surname\": \"Rzeźniczek\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/register",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ResetPassword",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/resetpassword?email=nonamekamil@gmail.com",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"resetpassword"
+					],
+					"query": [
+						{
+							"key": "email",
+							"value": "nonamekamil@gmail.com"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ConfirmResetPassword",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJsb2dpbiI6InJ6ZXpuaWsiLCJpZCI6IjY2MmJmODFkMDE0ZTZlZWFmMDg0NjQxZCIsImlhdCI6MTcxNDE1NzY0NSwiZXhwIjoxNzE0MTYxMjQ1fQ.098uqnfCd07Z7m7EyE7pRe6YgDPFvCni-H2T979xY0E",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"newpass\": \"okon1234\",\r\n    \"newpass2\": \"okon1234\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/resetconfirm",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"resetconfirm"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Login",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"login\":\"rzeznik\",\r\n    \"password\":\"okon1234\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/login",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "InsertBook",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJsb2dpbiI6InJ6ZXpuaWsiLCJpZCI6IjY2MmJmODFkMDE0ZTZlZWFmMDg0NjQxZCIsImlhdCI6MTcxNDE1NzcwNCwiZXhwIjoxNzE0MTYxMzA0fQ.o-vzwZwuO3ClZ02jTbjZkbSK1-Bx9UNwxkkzJFoWTN8",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"title\": \"Dziady cz.1\",\r\n    \"author\": \"Adam Mickiewicz\",\r\n    \"genre\": \"Dramat\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/insert/books",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"insert",
+						"books"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetBooks",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJsb2dpbiI6InJ6ZXpuaWsiLCJpZCI6IjY2MmJmODFkMDE0ZTZlZWFmMDg0NjQxZCIsImlhdCI6MTcxNDE1NzcwNCwiZXhwIjoxNzE0MTYxMzA0fQ.o-vzwZwuO3ClZ02jTbjZkbSK1-Bx9UNwxkkzJFoWTN8",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/get/books/?author=Adam Mickiewicz",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"get",
+						"books",
+						""
+					],
+					"query": [
+						{
+							"key": "author",
+							"value": "Adam Mickiewicz"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UpdateBook",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJsb2dpbiI6InJ6ZXpuaWsiLCJpZCI6IjY2MmJmODFkMDE0ZTZlZWFmMDg0NjQxZCIsImlhdCI6MTcxNDE1NzcwNCwiZXhwIjoxNzE0MTYxMzA0fQ.o-vzwZwuO3ClZ02jTbjZkbSK1-Bx9UNwxkkzJFoWTN8",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"title\":\"Dziady cz.4\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:3000/update/books/662bfa2e98cb723aef1a4019",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"update",
+						"books",
+						"662bfa2e98cb723aef1a4019"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "DeleteBook",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJsb2dpbiI6InJ6ZXpuaWsiLCJpZCI6IjY2MmJmODFkMDE0ZTZlZWFmMDg0NjQxZCIsImlhdCI6MTcxNDE1NzcwNCwiZXhwIjoxNzE0MTYxMzA0fQ.o-vzwZwuO3ClZ02jTbjZkbSK1-Bx9UNwxkkzJFoWTN8",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/delete/books/662bfa2e98cb723aef1a4019",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"delete",
+						"books",
+						"662bfa2e98cb723aef1a4019"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

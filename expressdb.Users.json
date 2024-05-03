@@ -1,0 +1,14 @@
+[{
+  "_id": {
+    "$oid": "662bf81d014e6eeaf084641d"
+  },
+  "login": "rzeznik",
+  "password": "$2b$10$fu5K4weyFzsMRejkGy8Ow.cb.9aVBxqH1u7vFEFAlj/bATx/63EfW",
+  "email": "nonamekamil@gmail.com",
+  "token": "",
+  "name": "Kamil",
+  "surname": "Rzeźniczek",
+  "activated": true,
+  "resetPassword": false,
+  "__v": 0
+}]
